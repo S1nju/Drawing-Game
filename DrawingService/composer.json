@@ -10,6 +10,7 @@
         "google/protobuf": "^4.33",
         "grpc/grpc": "^1.74",
         "laravel/framework": "^12.0",
+        "laravel/reverb": "^1.0",
         "laravel/tinker": "^2.10.1"
     },
     "require-dev": {

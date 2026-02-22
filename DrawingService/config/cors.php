@@ -15,11 +15,14 @@ return [
     |
     */
 
-    'paths' => ['api/*', 'sanctum/csrf-cookie'],
+    'paths' => ['api/*', 'sanctum/csrf-cookie', 'broadcasting/auth'],
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['http://localhost:5173'],
+   'allowed_origins' => [
+    'http://localhost:5174', // Your current React port
+    'http://localhost:5173', // Keep this just in case you switch back
+],
 
     'allowed_origins_patterns' => [],
 

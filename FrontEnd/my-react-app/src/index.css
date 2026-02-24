@@ -1,0 +1,99 @@
+/* Modern Gartic Phone-like Theme */
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700&display=swap');
+
+:root {
+  --primary-color: #5c2ced; /* Main purple */
+  --secondary-color: #21e6c1; /* Teal/Cyan accent */
+  --background-color: #0f1642; /* Deep blue background */
+  --card-bg: #1f2a63; /* Lighter blue for cards */
+  --text-color: #ffffff;
+  --text-muted: #b0b8d6;
+  --accent-yellow: #f9d71c;
+  --accent-pink: #ff007a;
+  --input-bg: rgba(255, 255, 255, 0.1);
+  
+  font-family: 'Nunito', sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: dark;
+  color: var(--text-color);
+  background-color: var(--background-color);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: var(--background-color);
+  background-image: 
+    radial-gradient(circle at 10% 20%, rgba(92, 44, 237, 0.2) 0%, transparent 20%),
+    radial-gradient(circle at 90% 80%, rgba(33, 230, 193, 0.15) 0%, transparent 20%);
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Fredoka One', cursive;
+  letter-spacing: 1px;
+}
+
+button {
+  font-family: 'Fredoka One', cursive;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  border: none;
+  transition: transform 0.1s ease, filter 0.2s ease;
+}
+
+button:active {
+  transform: scale(0.95);
+}
+
+.btn {
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-size: 1.2rem;
+  box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.btn-primary:hover {
+  filter: brightness(1.1);
+}
+
+.btn-secondary {
+  background-color: var(--secondary-color);
+  color: #0f1642;
+}
+
+.btn-secondary:hover {
+  filter: brightness(1.1);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.1);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--primary-color);
+  border-radius: 5px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #7a5af5;
+}

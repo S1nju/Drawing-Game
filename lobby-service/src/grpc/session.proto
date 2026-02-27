@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package session;
+
+service SessionService {
+  rpc GetPlayers (GetPlayersRequest) returns (GetPlayersResponse);
+}
+
+
+message GetPlayersRequest {
+  string lobbyId = 1;
+}
+
+message Player {
+  string id   = 1;
+  string name = 2;
+}
+
+message GetPlayersResponse {
+  repeated Player players = 1;
+}

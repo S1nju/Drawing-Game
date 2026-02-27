@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package lobby;
+
+service LobbyService {
+  // create a new lobby
+  rpc CreateLobby (CreateLobbyRequest) returns (CreateLobbyResponse);
+
+  // start the game
+  rpc StartLobby (StartLobbyRequest) returns (StartLobbyResponse);
+
+  // real-time state streaming
+  rpc LobbyStateStream (LobbyStateRequest) returns (stream LobbyStateResponse);
+}
+
+
+// ================= REQUESTS =================
+
+message CreateLobbyRequest {
+  string gameId = 1;
+  int32 rounds = 2;
+}
+
+message StartLobbyRequest {
+  string lobbyId = 1;
+}
+
+message LobbyStateRequest {
+  string lobbyId = 1;
+  string userId  = 2;
+}
+
+
+// ================= RESPONSES =================
+
+message CreateLobbyResponse {
+  string lobbyId = 1;
+  string status  = 2;
+}
+
+message StartLobbyResponse {
+  int32 currentRound = 1;
+  string drawerId    = 2;
+}
+
+message LobbyStateResponse {
+  int32 currentRound    = 1;
+  string currentDrawer  = 2;
+  int32 numberOfPlayers = 3;
+  string status         = 4;
+
+  // visible only to drawer (controller hides it)
+  string word           = 5;
+}

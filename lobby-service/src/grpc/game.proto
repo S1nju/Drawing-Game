@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package game;
+
+service GameService {
+  // get random word for round
+  rpc GetWord (GetWordRequest) returns (GetWordResponse);
+
+  // update score
+  rpc AddScore (AddScoreRequest) returns (Empty);
+
+  // get scores
+  rpc GetScores (GetScoresRequest) returns (GetScoresResponse);
+}
+
+
+// ================= WORD =================
+
+message GetWordRequest {}
+
+message GetWordResponse {
+  string word = 1;
+}
+
+
+// ================= SCORES =================
+
+message AddScoreRequest {
+  string lobbyId  = 1;
+  string playerId = 2;
+  int32 points    = 3;
+}
+
+message GetScoresRequest {
+  string lobbyId = 1;
+}
+
+message Score {
+  string playerId = 1;
+  int32 score     = 2;
+}
+
+message GetScoresResponse {
+  repeated Score scores = 1;
+}
+
+
+// ================= COMMON =================
+
+message Empty {}

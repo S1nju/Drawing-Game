@@ -1,0 +1,14 @@
+syntax = "proto3";
+package LobbyService;
+service LobbyService {
+  rpc GetLobbyInfo (LoobbyInfoRequest) returns (LoobbyInfoResponse);
+}
+message LoobbyInfoRequest {
+  string game_id = 1;
+
+}
+message LoobbyInfoResponse {
+  string round_time = 1;
+  repeated string words = 2;
+  string status =3;
+}

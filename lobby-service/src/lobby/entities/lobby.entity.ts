@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn } from 'typeorm';
 
 @Entity()
 export class Lobby {
@@ -8,15 +8,12 @@ export class Lobby {
   @Column({ type: 'uuid' })
   game_id!: string;
 
-  @Column()
+  @Column({ default: 0 })
   rounds!: number;
 
   @Column({ default: 'PENDING' })
   status!: string; // PENDING | STARTED | FINISHED
 
-  @Column({ default: 0 })
-  current_round!: number;
-
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @CreateDateColumn()
   created_at!: Date;
 }

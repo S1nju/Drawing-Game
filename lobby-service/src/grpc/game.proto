@@ -11,9 +11,9 @@ message GetGameRequest {
 }
 
 message GameInfoResponse {
-  string gameId = 1;
-  string status = 2;
-  int32 maxPlayers = 3;
-  int32 totalRounds = 4;
-  int32 turnTime = 5;
+  string gameId      = 1;
+  string status      = 2;
+  int32  maxPlayers  = 3;
+  int32  totalRounds = 4;
+  int32  turnTime    = 5;
 }

@@ -1,211 +1,182 @@
 import { Injectable, Inject, OnModuleInit } from '@nestjs/common';
-import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import type { ClientGrpc } from '@nestjs/microservices';
+import { Repository } from 'typeorm';
+import { ClientGrpc } from '@nestjs/microservices';
 import { Subject, Observable, firstValueFrom } from 'rxjs';
 
-// exported so other modules (controller) can reuse the shape
-export interface LobbyState {
-  status: string;
-  currentRound: number;
-  currentDrawer: string;
-  numberOfPlayers: number;
-}
-
 import { Lobby } from './entities/lobby.entity';
-import { GameEngine } from './engine/game-engine';
 import { WordProvider } from './engine/word-provider';
 
-interface SessionService {
-  GetPlayers(data: { lobbyId: string }): Observable<{ players: string[] }>;
+// ── Shape of every stream emission ──────────────────────────────────────────
+export interface LobbyState {
+  status: string;
+  word: string;
+}
+
+// ── gRPC service interfaces (match proto definitions exactly) ────────────────
+interface GameService {
+  GetGameInfo(data: { gameId: string }): Observable<{
+    gameId: string;
+    status: string;
+    maxPlayers: number;
+    totalRounds: number;
+    turnTime: number;
+  }>;
+}
+
+interface UsersService {
+  CheckUser(data: { sessionId: string }): Observable<{ check: number }>;
 }
 
 @Injectable()
 export class LobbyService implements OnModuleInit {
-  // we initialise in onModuleInit after the grpc client is ready
-  private sessionService!: SessionService;
+  // ── gRPC clients (assigned in onModuleInit) ────────────────────────────────
+  private gameService!: GameService;
+  private usersService!: UsersService;
 
-  private engines = new Map<string, GameEngine>();
-  private streams = new Map<string, Subject<any>>();
+  // ── In-memory runtime state ────────────────────────────────────────────────
+  private gameStatus = new Map<string, string>();
+  private currentWords = new Map<string, string>();
+  private currentRounds = new Map<string, number>();
+  private totalRounds = new Map<string, number>();
+  private streams = new Map<string, Subject<LobbyState>>();
   private timers = new Map<string, NodeJS.Timeout>();
+
   private words = new WordProvider();
 
   constructor(
     @InjectRepository(Lobby)
     private lobbyRepo: Repository<Lobby>,
 
-    @Inject('SESSION_SERVICE')
-    private client: ClientGrpc,
+    @Inject('GAME_SERVICE')
+    private gameClient: ClientGrpc,
+
+    @Inject('USERS_SERVICE')
+    private usersClient: ClientGrpc,
   ) {}
 
-  // =====================================================
-  // INIT
-  // =====================================================
-
+  // ── NestJS lifecycle: runs once the module is ready ────────────────────────
   onModuleInit() {
-    // ⚠️ MUST be proto service name
-    this.sessionService =
-      this.client.getService<SessionService>('SessionService');
+    this.gameService = this.gameClient.getService<GameService>('GameService');
+    this.usersService = this.usersClient.getService<UsersService>('UsersService');
   }
 
   // =====================================================
-  // CREATE LOBBY
+  // CREATE LOBBY  – persist metadata only, no game logic
   // =====================================================
-
-  async createLobby(gameId: string, rounds: number) {
+  async createLobby(gameId: string) {
     const lobby = this.lobbyRepo.create({
       game_id: gameId,
-      rounds,
       status: 'PENDING',
     });
-
     return this.lobbyRepo.save(lobby);
   }
 
   // =====================================================
-  // START LOBBY
+  // START LOBBY  – fetch rules from Game Service, then run
   // =====================================================
-
-  async startLobby(lobbyId: string) {
+  async startLobby(lobbyId: string, gameId: string) {
+    // 1. Verify lobby exists in DB
     const lobby = await this.lobbyRepo.findOneBy({ id: lobbyId });
-    if (!lobby) throw new Error('Lobby not found');
+    if (!lobby) throw new Error(`Lobby ${lobbyId} not found`);
 
-    // fetch players from Session
-    const response = await firstValueFrom(
-      this.sessionService.GetPlayers({ lobbyId }),
+    // 2. Fetch rules (totalRounds + turnTime) from Game Service
+    const gameInfo = await firstValueFrom(
+      this.gameService.GetGameInfo({ gameId }),
     );
 
-    const players = response.players;
-
-    if (!players?.length) throw new Error('No players');
-
-    const engine = new GameEngine(players, lobby.rounds);
-
-    const word = this.words.getRandomWord();
-    engine.startFirstRound(word);
-
-    this.engines.set(lobbyId, engine);
-
+    // 3. Persist rounds count for reference
+    lobby.rounds = gameInfo.totalRounds;
     lobby.status = 'STARTED';
-    lobby.current_round = 1;
     await this.lobbyRepo.save(lobby);
 
-    this.startRoundTimer(lobbyId);
+    // 4. Bootstrap in-memory state
+    this.gameStatus.set(lobbyId, 'STARTED');
+    this.currentRounds.set(lobbyId, 1);
+    this.totalRounds.set(lobbyId, gameInfo.totalRounds);
+    this.currentWords.set(lobbyId, this.words.getRandomWord());
+
+    // 5. Broadcast initial state, then start the timed loop
     this.emitState(lobbyId);
+    this.runGameLoop(lobbyId, gameInfo.totalRounds, gameInfo.turnTime * 1000);
 
-    return {
-      drawerId: engine.getCurrentDrawer(),
-      round: 1,
-    };
+    return { status: 'STARTED' };
   }
 
   // =====================================================
-  // STREAM
+  // GAME LOOP  – advances rounds using dynamic turnTime
   // =====================================================
+  private runGameLoop(lobbyId: string, total: number, durationMs: number) {
+    const timer = setTimeout(() => {
+      const round = this.currentRounds.get(lobbyId) ?? 0;
 
-  /**
-   * Always returns a Subject for the given lobby.  If one does not yet
-   * exist it is created.  The return type is **never** undefined which
-   * prevents callers having to guard.
-   */
-  getStream(lobbyId: string): Subject<any> {
-    if (!this.streams.has(lobbyId)) {
-      this.streams.set(lobbyId, new Subject());
-    }
-    // the has() above guarantees this will not be undefined
-    return this.streams.get(lobbyId)!;
-  }
+      if (round >= total) {
+        this.finishGame(lobbyId);
+      } else {
+        // Advance round + new word
+        this.currentRounds.set(lobbyId, round + 1);
+        this.currentWords.set(lobbyId, this.words.getRandomWord());
+        this.emitState(lobbyId);
+        this.runGameLoop(lobbyId, total, durationMs); // schedule next
+      }
+    }, durationMs);
 
-  private broadcast(lobbyId: string, payload: any) {
-    this.getStream(lobbyId).next(payload);
-  }
-
-  // =====================================================
-  // TIMER
-  // =====================================================
-
-  private startRoundTimer(lobbyId: string) {
-    // the callback is async; we don't care about the returned promise
-    const timer = setTimeout(() => void this.nextRound(lobbyId), 60_000);
     this.timers.set(lobbyId, timer);
   }
 
-  private clearTimer(lobbyId: string) {
-    const t = this.timers.get(lobbyId);
-    if (t) clearTimeout(t);
-  }
-
-  // =====================================================
-  // ROUND ROTATION
-  // =====================================================
-
-  private async nextRound(lobbyId: string) {
-    const engine = this.engines.get(lobbyId);
-    const lobby = await this.lobbyRepo.findOneBy({ id: lobbyId });
-
-    if (!engine || !lobby) return;
-
-    if (engine.getRound() >= lobby.rounds) {
-      lobby.status = 'FINISHED';
-      await this.lobbyRepo.save(lobby);
-
-      this.broadcast(lobbyId, { status: 'FINISHED' });
-
-      this.cleanup(lobbyId);
-      return;
-    }
-
-    const word = this.words.getRandomWord();
-    engine.nextRound(word);
-
-    lobby.current_round = engine.getRound();
-    await this.lobbyRepo.save(lobby);
-
+  private finishGame(lobbyId: string) {
+    this.gameStatus.set(lobbyId, 'FINISHED');
+    this.currentWords.set(lobbyId, '');
     this.emitState(lobbyId);
-    this.startRoundTimer(lobbyId);
+    this.cleanup(lobbyId);
+
+    // Persist FINISHED in DB (fire-and-forget)
+    void this.lobbyRepo.update(lobbyId, { status: 'FINISHED' });
   }
 
   // =====================================================
-  // STATE EMISSION
+  // STREAM  – one Subject per lobby
   // =====================================================
+  getStream(lobbyId: string): Subject<LobbyState> {
+    if (!this.streams.has(lobbyId)) {
+      this.streams.set(lobbyId, new Subject<LobbyState>());
+    }
+    return this.streams.get(lobbyId)!;
+  }
 
   private emitState(lobbyId: string) {
-    const engine = this.engines.get(lobbyId);
-    if (!engine) return;
-
-    this.broadcast(lobbyId, {
-      status: 'STARTED',
-      currentRound: engine.getRound(),
-      numberOfPlayers: engine.getPlayerCount(),
-      currentDrawer: engine.getCurrentDrawer(),
-      word: engine.getCurrentWord(),
+    this.getStream(lobbyId).next({
+      status: this.gameStatus.get(lobbyId) ?? 'PENDING',
+      word: this.currentWords.get(lobbyId) ?? '',
     });
   }
 
   // =====================================================
-  // CLEANUP (important)
+  // SECURITY  – delegates to Users Service
   // =====================================================
-
-  private cleanup(lobbyId: string) {
-    this.clearTimer(lobbyId);
-    this.engines.delete(lobbyId);
-    this.streams.delete(lobbyId);
-    this.timers.delete(lobbyId);
+  async validateSession(sessionId: string): Promise<boolean> {
+    try {
+      const res = await firstValueFrom(
+        this.usersService.CheckUser({ sessionId }),
+      );
+      return res.check === 1.0;
+    } catch {
+      return false;
+    }
   }
 
   // =====================================================
-  // STATE GETTER
+  // CLEANUP  – prevent memory leaks
   // =====================================================
+  private cleanup(lobbyId: string) {
+    const t = this.timers.get(lobbyId);
+    if (t) clearTimeout(t);
 
-  getState(lobbyId: string): LobbyState | null {
-    const engine = this.engines.get(lobbyId);
-    if (!engine) return null;
-
-    return {
-      status: engine.getStatus(), // ← ADD THIS
-      currentRound: engine.getRound(),
-      currentDrawer: engine.getCurrentDrawer(),
-      numberOfPlayers: engine.getPlayerCount(),
-    };
+    this.timers.delete(lobbyId);
+    this.gameStatus.delete(lobbyId);
+    this.currentWords.delete(lobbyId);
+    this.currentRounds.delete(lobbyId);
+    this.totalRounds.delete(lobbyId);
+    // streams stays alive until all subscribers unsubscribe
   }
 }

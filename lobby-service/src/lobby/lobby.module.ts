@@ -9,24 +9,11 @@ import { LobbyController } from './lobby.controller';
 
 @Module({
   imports: [
-    // ================= DB =================
+    // ── Database ─────────────────────────────────────────────────────────────
     TypeOrmModule.forFeature([Lobby]),
 
-    // ================= gRPC CLIENTS =================
-    // Lobby calls ONLY Session + Game
+    // ── gRPC Clients ──────────────────────────────────────────────────────────
     ClientsModule.register([
-      // ---------- Session Service ----------
-      {
-        name: 'SESSION_SERVICE',
-        transport: Transport.GRPC,
-        options: {
-          package: 'session',
-          protoPath: join(__dirname, '../grpc/session.proto'),
-          url: 'localhost:50052',
-        },
-      },
-
-      // ---------- Game Service ----------
       {
         name: 'GAME_SERVICE',
         transport: Transport.GRPC,
@@ -36,9 +23,17 @@ import { LobbyController } from './lobby.controller';
           url: 'localhost:50053',
         },
       },
+      {
+        name: 'USERS_SERVICE',
+        transport: Transport.GRPC,
+        options: {
+          package: 'users',
+          protoPath: join(__dirname, '../grpc/users.proto'),
+          url: 'localhost:50054',
+        },
+      },
     ]),
   ],
-
   controllers: [LobbyController],
   providers: [LobbyService],
 })

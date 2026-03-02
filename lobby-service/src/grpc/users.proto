@@ -1,21 +1,18 @@
-syntax ="proto3";
+syntax = "proto3";
 
 package users;
 
 service UsersService {
   rpc CheckUser (CheckUserRequest) returns (CheckUserResponse);
   rpc CheckById (CheckByIdRequest) returns (CheckByIdResponse);
-
 }
-
 
 message CheckUserRequest {
   string sessionId = 1;
-  
 }
 
 message CheckUserResponse {
-  float check = 1;
+  float check = 1; // 1.0 = Valid, 0.0 = Invalid
 }
 
 message CheckByIdRequest {

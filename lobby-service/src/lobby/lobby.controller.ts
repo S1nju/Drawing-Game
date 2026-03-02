@@ -1,9 +1,7 @@
 import { Controller } from '@nestjs/common';
 import { GrpcMethod, RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
-import { Observable } from 'rxjs';
-
-import { LobbyService, LobbyState } from './lobby.service';
+import { LobbyService } from './lobby.service';
 
 @Controller()
 export class LobbyController {
@@ -13,7 +11,10 @@ export class LobbyController {
   @GrpcMethod('LobbyService', 'CreateLobby')
   async createLobby(data: { gameId: string }) {
     const lobby = await this.lobbyService.createLobby(data.gameId);
-    return { lobbyId: lobby.id, status: lobby.status };
+    return {
+      lobbyId: lobby.id,
+      status: lobby.status,
+    };
   }
 
   // ── StartLobby ─────────────────────────────────────────────────────────────
@@ -22,13 +23,10 @@ export class LobbyController {
     return this.lobbyService.startLobby(data.lobbyId, data.gameId);
   }
 
-  // ── LobbyStateStream ───────────────────────────────────────────────────────
-  @GrpcMethod('LobbyService', 'LobbyStateStream')
-  async lobbyStateStream(data: {
-    lobbyId: string;
-    sessionId: string;
-  }): Promise<Observable<LobbyState>> {
-    // Security: validate session via Users Service before opening stream
+  // ── GetLobbyState (Replaces LobbyStateStream) ──────────────────────────────
+  @GrpcMethod('LobbyService', 'GetLobbyState')
+  async getLobbyState(data: { lobbyId: string; sessionId: string }) {
+    // 1. Security: Validate user session via Users Service
     const isValid = await this.lobbyService.validateSession(data.sessionId);
 
     if (!isValid) {
@@ -38,6 +36,16 @@ export class LobbyController {
       });
     }
 
-    return this.lobbyService.getStream(data.lobbyId).asObservable();
+    // 2. Fetch the current snapshot of the game
+    const state = this.lobbyService.getLobbyState(data.lobbyId);
+
+    if (!state) {
+      throw new RpcException({
+        code: status.NOT_FOUND,
+        message: 'Lobby not found or not active',
+      });
+    }
+
+    return state;
   }
 }

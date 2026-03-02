@@ -1,9 +1,24 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryColumn,
+  BeforeInsert,
+  CreateDateColumn,
+} from 'typeorm';
+import { v4 as uuidv4 } from 'uuid';
 
 @Entity()
 export class Lobby {
-  @PrimaryGeneratedColumn('uuid')
-  id!: string;
+  @PrimaryColumn('uuid')
+  id: string;
+
+  @BeforeInsert()
+  generateId() {
+    // This ensures NestJS generates the ID instead of Postgres
+    if (!this.id) {
+      this.id = uuidv4();
+    }
+  }
 
   @Column({ type: 'uuid' })
   game_id!: string;
@@ -12,7 +27,7 @@ export class Lobby {
   rounds!: number;
 
   @Column({ default: 'PENDING' })
-  status!: string; // PENDING | STARTED | FINISHED
+  status!: string;
 
   @CreateDateColumn()
   created_at!: Date;

@@ -10,10 +10,10 @@ import { Lobby } from './lobby/entities/lobby.entity';
       host: 'localhost',
       port: 5432,
       username: 'postgres',
-      password: '1234',
+      password: '123456',
       database: 'lobbydb',
       entities: [Lobby],
-      synchronize: true, // for dev only
+      synchronize: true,
     }),
     LobbyModule,
   ],

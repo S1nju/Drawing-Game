@@ -3,9 +3,10 @@ syntax = "proto3";
 package lobby;
 
 service LobbyService {
-  rpc CreateLobby      (CreateLobbyRequest) returns (CreateLobbyResponse);
-  rpc StartLobby       (StartLobbyRequest)  returns (StartLobbyResponse);
-  rpc LobbyStateStream (LobbyStateRequest)  returns (stream LobbyStateResponse);
+  rpc CreateLobby    (CreateLobbyRequest) returns (CreateLobbyResponse);
+  rpc StartLobby     (StartLobbyRequest)  returns (StartLobbyResponse);
+  // Changed from 'stream' to a standard Unary call
+  rpc GetLobbyState  (LobbyStateRequest)  returns (LobbyStateResponse);
 }
 
 message CreateLobbyRequest {

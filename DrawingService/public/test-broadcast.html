@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reverb Broadcast Test</title>
+    <style>
+        body { font-family: monospace; background: #1e1e1e; color: #0f0; padding: 20px; }
+        .log { background: #000; padding: 15px; border-radius: 5px; margin: 10px 0; max-height: 400px; overflow-y: auto; }
+        button { background: #0f0; color: #000; padding: 8px 15px; border: none; border-radius: 3px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #00dd00; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 3px; }
+        .connected { background: #0a3a0a; color: #0f0; }
+        .disconnected { background: #3a0a0a; color: #f00; }
+        .error { color: #ff6b6b; }
+        .success { color: #51cf66; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Reverb Broadcast Test</h1>
+    
+    <div class="status disconnected" id="status">
+        🔴 Disconnected
+    </div>
+    
+    <div>
+        <button onclick="sendTest()">Send Test Broadcast</button>
+        <button onclick="clearLog()">Clear Log</button>
+    </div>
+    
+    <h3>Event Log:</h3>
+    <div class="log" id="log"></div>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/laravel-echo@2.3.0/dist/echo.iife.js"></script>
+    <script src="https://js.pusher.com/7.0/pusher.min.js"></script>
+
+    <script>
+        const logEl = document.getElementById('log');
+        const statusEl = document.getElementById('status');
+        let echo;
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? 'color: #ff6b6b' : type === 'success' ? 'color: #51cf66' : 'color: #0f0';
+            console.log(`[${timestamp}] ${message}`);
+            
+            const entry = document.createElement('div');
+            entry.innerHTML = `<span style="${color}">[${timestamp}] ${type.toUpperCase()}</span>: ${message}`;
+            logEl.appendChild(entry);
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+        
+        function updateStatus(connected) {
+            statusEl.className = 'status ' + (connected ? 'connected' : 'disconnected');
+            statusEl.textContent = (connected ? '🟢' : '🔴') + (connected ? ' Connected' : ' Disconnected');
+        }
+        
+        // Initialize Echo
+        window.Pusher = Pusher;
+        
+        echo = new Echo({
+            broadcaster: 'reverb',
+            key: 'amine123',
+            wsHost: 'localhost',
+            wsPort: 8080,
+            forceTLS: false,
+        });
+        
+        log('Echo initialized', 'info');
+        
+        // Monitor connection
+        echo.connector.socket.on('connect', () => {
+            updateStatus(true);
+            log('✓ Connected to Reverb', 'success');
+            log('Socket ID: ' + echo.socketId(), 'info');
+        });
+        
+        echo.connector.socket.on('disconnect', () => {
+            updateStatus(false);
+            log('✗ Disconnected from Reverb', 'error');
+        });
+        
+        echo.connector.socket.on('error', (error) => {
+            log('Error: ' + JSON.stringify(error), 'error');
+        });
+        
+        // Subscribe to test channel
+        const testGameId = 'test-' + Date.now();
+        const channel = echo.channel('game.' + testGameId);
+        log(`Subscribed to: game.${testGameId}`, 'info');
+        
+        channel.listen('TestBroadcast', (data) => {
+            log(`✓ TestBroadcast received: ${data.message}`, 'success');
+        });
+        
+        channel.listen('UserJoined', (data) => {
+            log(`✓ UserJoined received: ${data.user.name}`, 'success');
+        });
+        
+        channel.listen('UserLeft', (data) => {
+            log(`✓ UserLeft received: ${data.user.name}`, 'success');
+        });
+        
+        async function sendTest() {
+            const gameId = 'test-' + Date.now();
+            log(`Sending test broadcast to: game.${gameId}...`, 'info');
+            
+            try {
+                const response = await fetch('http://localhost:8000/api/test/broadcast', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        gameId: gameId,
+                        message: 'Hello from test! ' + new Date().toLocaleTimeString()
+                    })
+                });
+                
+                const data = await response.json();
+                log(`Backend response: ${data.message}`, 'success');
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+            }
+        }
+        
+        function clearLog() {
+            logEl.innerHTML = '';
+            log('Log cleared', 'info');
+        }
+        
+        log('Page loaded', 'info');
+        log('Waiting for connection...', 'info');
+    </script>
+</body>
+</html>

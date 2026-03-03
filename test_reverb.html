@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Reverb Connection Test</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body>
+    <h1>Reverb WebSocket Test</h1>
+    <div id="status">Connecting...</div>
+    <div id="messages"></div>
+
+    <script>
+        // Try direct WebSocket connection to Reverb
+        console.log('Testing Reverb WebSocket connection...');
+        
+        // Test 1: Socket.IO connection (what Reverb uses)
+        const socket = io('http://localhost:8080', {
+            transports: ['websocket'],
+            reconnectionDelay: 1000,
+            reconnection: true,
+            reconnectionDelayMax: 5000,
+            reconnectionAttempts: 5
+        });
+
+        socket.on('connect', () => {
+            console.log('✅ Connected to Reverb');
+            document.getElementById('status').innerHTML = '✅ <b>Connected to Reverb</b>';
+            console.log('Socket ID:', socket.id);
+            
+            // Try to subscribe to a channel
+            socket.emit('subscribe', { channel: 'game.test123' });
+        });
+
+        socket.on('disconnect', () => {
+            console.log('❌ Disconnected from Reverb');
+            document.getElementById('status').innerHTML = '❌ <b>Disconnected</b>';
+        });
+
+        socket.on('error', (error) => {
+            console.error('❌ Socket error:', error);
+            document.getElementById('status').innerHTML = '❌ <b>Error: ' + JSON.stringify(error) + '</b>';
+        });
+
+        socket.on('connect_error', (error) => {
+            console.error('❌ Connection error:', error);
+            document.getElementById('status').innerHTML = '❌ <b>Connection Error: ' + error.message + '</b>';
+        });
+
+        // Listen for any messages
+        socket.on('message', (data) => {
+            console.log('📨 Message:', data);
+            const msgDiv = document.createElement('div');
+            msgDiv.textContent = JSON.stringify(data);
+            document.getElementById('messages').appendChild(msgDiv);
+        });
+
+        // Listen for UserJoined event
+        socket.on('UserJoined', (data) => {
+            console.log('✅ UserJoined event received:', data);
+            const msgDiv = document.createElement('div');
+            msgDiv.style.color = 'green';
+            msgDiv.textContent = '✅ UserJoined: ' + JSON.stringify(data);
+            document.getElementById('messages').appendChild(msgDiv);
+        });
+
+        socket.on('UserLeft', (data) => {
+            console.log('✅ UserLeft event received:', data);
+            const msgDiv = document.createElement('div');
+            msgDiv.style.color = 'red';
+            msgDiv.textContent = '❌ UserLeft: ' + JSON.stringify(data);
+            document.getElementById('messages').appendChild(msgDiv);
+        });
+
+        // Log all events
+        const originalEmit = socket.emit;
+        socket.emit = function(event, ...args) {
+            console.log('📤 Emitting event:', event, args);
+            return originalEmit.apply(socket, [event, ...args]);
+        };
+
+        const originalOn = socket.on;
+        socket.on = function(event, handler) {
+            console.log('📥 Listening for event:', event);
+            return originalOn.apply(socket, [event, handler]);
+        };
+
+        console.log('Test page loaded - check console for logs');
+    </script>
+
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        #status { padding: 20px; margin: 20px 0; border: 1px solid #ccc; }
+        #messages { margin-top: 20px; }
+        #messages div { padding: 10px; margin: 10px 0; border-left: 3px solid #ccc; }
+    </style>
+</body>
+</html>

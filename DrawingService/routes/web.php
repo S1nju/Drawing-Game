@@ -2,11 +2,12 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DrawingController;
+use App\Http\Controllers\DrawingLobbyController;
 
 Route::get('/', function () {
     return view('welcome');
 });
 
-Route::post('/api/v1/drawing', [DrawingController::class, 'store']);
-Route::get('/api/v1/drawing/{gameId}', [DrawingController::class, 'getGameDrawings']);
-Route::delete('/api/v1/drawing/{gameId}', [DrawingController::class, 'clearGame']);
+// Game room endpoints
+Route::post('api/game/{gameId}/join',[DrawingLobbyController::class, 'joinLobby']);
+Route::post('api/game/{gameId}/leave', [DrawingLobbyController::class, 'leaveLobby']);

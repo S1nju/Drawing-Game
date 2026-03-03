@@ -7,23 +7,23 @@ use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class GotDrawing implements ShouldBroadcast
+class UserLeft implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
-
-    public $data;
-    public $gameId;
 
     /**
      * Create a new event instance.
      */
-    public function __construct($data, $gameId = 'default')
+    public function __construct(public string $gameId, public array $user)
     {
-        $this->data = $data;
-        $this->gameId = $gameId;
+        \Log::info('UserLeft event created', [
+            'gameId' => $this->gameId,
+            'user' => $this->user
+        ]);
     }
 
     /**
@@ -33,16 +33,23 @@ class GotDrawing implements ShouldBroadcast
      */
     public function broadcastOn(): array
     {
+        \Log::info('UserLeft broadcastOn called', [
+            'channel' => 'game.'.$this->gameId
+        ]);
         return [
-            new PrivateChannel('drawing.' . $this->gameId),
+            new Channel('game.'.$this->gameId),
         ];
     }
 
-    /**
-     * Get the data to broadcast.
-     */
     public function broadcastAs(): string
     {
-        return 'drawing.update';
+        return 'UserLeft';
+    }
+
+    public function broadcastWith(): array
+    {
+        return [
+            'user' => $this->user
+        ];
     }
 }

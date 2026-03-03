@@ -21,7 +21,7 @@ return [
 
    'allowed_origins' => [
     'http://localhost:5174', // Your current React port
-    'http://localhost:5173', // Keep this just in case you switch back
+    '*', // Keep this just in case you switch back
 ],
 
     'allowed_origins_patterns' => [],

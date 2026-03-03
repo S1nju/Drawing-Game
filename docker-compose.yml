@@ -1,0 +1,36 @@
+version: "3.9"
+
+services:
+  auth-service:
+    build: ./authService
+    container_name: nestjs-app
+    ports:
+      - "3001:3001"     # REST API
+      - "50051:50051"   # gRPC server
+    environment:
+      - NODE_ENV=production
+      - DATABASE_HOST=postgres_auth
+      - DATABASE_PORT=5432
+      - DATABASE_USER=harir
+      - DATABASE_PASSWORD=harir
+      - DATABASE_NAME=auth
+      - SECRET_KEY_SESSION=harir2004
+    depends_on:
+      - postgres_auth
+    restart: unless-stopped
+
+  postgres_auth:
+    image: postgres:16-alpine
+    container_name: nestjs-postgres
+    ports:
+      - "5435:5432"
+    environment:
+      POSTGRES_USER: harir
+      POSTGRES_PASSWORD: harir
+      POSTGRES_DB: auth
+    volumes:
+      - pgdata_auth:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  pgdata_auth:

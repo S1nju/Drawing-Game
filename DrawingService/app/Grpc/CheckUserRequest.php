@@ -3,6 +3,8 @@
 # NO CHECKED-IN PROTOBUF GENCODE
 # source: user_service.proto
 
+namespace App\Grpc;
+
 use Google\Protobuf\Internal\GPBType;
 use Google\Protobuf\Internal\GPBUtil;
 use Google\Protobuf\RepeatedField;
@@ -27,7 +29,7 @@ class CheckUserRequest extends \Google\Protobuf\Internal\Message
      * }
      */
     public function __construct($data = NULL) {
-        \GPBMetadata\UserService::initOnce();
+        \App\Grpc\GPBMetadata\UserService::initOnce();
         parent::__construct($data);
     }
 

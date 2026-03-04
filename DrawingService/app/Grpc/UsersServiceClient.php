@@ -1,7 +1,7 @@
 <?php
 // GENERATED CODE -- DO NOT EDIT!
 
-namespace ;
+namespace App\Grpc;
 
 /**
  */
@@ -17,30 +17,30 @@ class UsersServiceClient extends \Grpc\BaseStub {
     }
 
     /**
-     * @param \CheckUserRequest $argument input argument
+     * @param \App\Grpc\CheckUserRequest $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
      * @return \Grpc\UnaryCall
      */
-    public function CheckUser(\CheckUserRequest $argument,
+    public function CheckUser(\App\Grpc\CheckUserRequest $argument,
       $metadata = [], $options = []) {
         return $this->_simpleRequest('/UsersService/CheckUser',
         $argument,
-        ['\CheckUserResponse', 'decode'],
+        ['\App\Grpc\CheckUserResponse', 'decode'],
         $metadata, $options);
     }
 
     /**
-     * @param \CheckByIdRequest $argument input argument
+     * @param \App\Grpc\CheckByIdRequest $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
      * @return \Grpc\UnaryCall
      */
-    public function CheckById(\CheckByIdRequest $argument,
+    public function CheckById(\App\Grpc\CheckByIdRequest $argument,
       $metadata = [], $options = []) {
         return $this->_simpleRequest('/UsersService/CheckById',
         $argument,
-        ['\CheckByIdResponse', 'decode'],
+        ['\App\Grpc\CheckByIdResponse', 'decode'],
         $metadata, $options);
     }
 

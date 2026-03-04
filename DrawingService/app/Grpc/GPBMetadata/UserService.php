@@ -3,7 +3,7 @@
 # NO CHECKED-IN PROTOBUF GENCODE
 # source: user_service.proto
 
-namespace GPBMetadata;
+namespace App\Grpc\GPBMetadata;
 
 class UserService
 {
@@ -16,7 +16,7 @@ class UserService
           return;
         }
         $pool->internalAddGeneratedFile(
-            "\x0A\xA3\x02\x0A\x12user_service.proto\"%\x0A\x10CheckUserRequest\x12\x11\x0A\x09sessionId\x18\x01 \x01(\x09\"\"\x0A\x11CheckUserResponse\x12\x0D\x0A\x05check\x18\x01 \x01(\x02\"\x1E\x0A\x10CheckByIdRequest\x12\x0A\x0A\x02id\x18\x01 \x01(\x05\"\"\x0A\x11CheckByIdResponse\x12\x0D\x0A\x05check\x18\x01 \x01(\x022v\x0A\x0CUsersService\x122\x0A\x09CheckUser\x12\x11.CheckUserRequest\x1A\x12.CheckUserResponse\x122\x0A\x09CheckById\x12\x11.CheckByIdRequest\x1A\x12.CheckByIdResponseb\x06proto3"
+            "\x0A\xC7\x02\x0A\x12user_service.proto\"%\x0A\x10CheckUserRequest\x12\x11\x0A\x09sessionId\x18\x01 \x01(\x09\"\"\x0A\x11CheckUserResponse\x12\x0D\x0A\x05check\x18\x01 \x01(\x02\"\x1E\x0A\x10CheckByIdRequest\x12\x0A\x0A\x02id\x18\x01 \x01(\x05\"\"\x0A\x11CheckByIdResponse\x12\x0D\x0A\x05check\x18\x01 \x01(\x022v\x0A\x0CUsersService\x122\x0A\x09CheckUser\x12\x11.CheckUserRequest\x1A\x12.CheckUserResponse\x122\x0A\x09CheckById\x12\x11.CheckByIdRequest\x1A\x12.CheckByIdResponseB\"\xCA\x02\x08App\\Grpc\xE2\x02\x14App\\Grpc\\GPBMetadatab\x06proto3"
         , true);
 
         static::$is_initialized = true;

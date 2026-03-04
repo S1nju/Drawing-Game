@@ -1,98 +1,125 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import useEcho from '../hooks/useEcho';
-const DrawingBoard = ({ roomId = '123' }) => {
-    const canvasRef = useRef(null);
-    const channelRef = useRef(null);
-    const isDrawing = useRef(false);
+
+const DrawingBoard = ({ roomId = '123', word = '', isDrawer = false, userId }) => {
+    const canvasRef   = useRef(null);
+    const channelRef  = useRef(null);
+    const isDrawing   = useRef(false);
+    const echo        = useEcho();
+
+    // Refs to avoid stale closures in listeners/throttles
+    const isDrawerRef = useRef(isDrawer);
+    const userIdRef   = useRef(userId);
+    const roomIdRef   = useRef(roomId);
+
+    useEffect(() => { isDrawerRef.current = isDrawer; }, [isDrawer]);
+    useEffect(() => { userIdRef.current   = userId; },   [userId]);
+    useEffect(() => { roomIdRef.current   = roomId; },   [roomId]);
+
     const [brushColor, setBrushColor] = useState('#000000');
-    const [brushSize, setBrushSize] = useState(5);
-    const echo = useEcho();
-    // Save canvas to localStorage
+    const [brushSize, setBrushSize]   = useState(5);
+
     const saveCanvasToLocalStorage = () => {
         if (canvasRef.current) {
-            const canvasData = canvasRef.current.toDataURL();
-            localStorage.setItem(`drawing_${roomId}`, canvasData);
+            localStorage.setItem(`drawing_${roomId}`, canvasRef.current.toDataURL());
         }
     };
 
-    // Load canvas and settings from localStorage
     const loadCanvasFromLocalStorage = () => {
         if (canvasRef.current) {
             const canvasData = localStorage.getItem(`drawing_${roomId}`);
-            const savedColor = localStorage.getItem(`drawingColor_${roomId}`);
-            const savedSize = localStorage.getItem(`drawingSize_${roomId}`);
-            
             if (canvasData) {
                 const img = new Image();
                 img.onload = () => {
                     const ctx = canvasRef.current.getContext('2d');
+                    ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
                     ctx.drawImage(img, 0, 0);
                 };
                 img.src = canvasData;
             }
-            
-            if (savedColor) setBrushColor(savedColor);
-            if (savedSize) setBrushSize(parseInt(savedSize));
         }
     };
 
-    // Clear drawings from canvas and localStorage
     const clearDrawings = () => {
+        if (!isDrawerRef.current) return;
         if (canvasRef.current) {
             const ctx = canvasRef.current.getContext('2d');
             ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
             localStorage.removeItem(`drawing_${roomId}`);
+            sendDrawEvent({ isClear: true });
         }
     };
 
-    // Handle color change
-    const handleColorChange = (e) => {
-        const newColor = e.target.value;
-        setBrushColor(newColor);
-        localStorage.setItem(`drawingColor_${roomId}`, newColor);
+    // Low-level send function
+    const sendDrawEvent = async (data) => {
+        if (!isDrawerRef.current || !roomIdRef.current || !userIdRef.current) return;
+        
+        try {
+            const socketId = echo?.socketId();
+            
+            await fetch(`http://localhost:8000/api/game/${roomIdRef.current}/draw`, {
+
+                method:  'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-Socket-ID':  socketId || ''
+                },
+                body: JSON.stringify({ ...data, user_id: userIdRef.current }),
+            });
+        } catch (err) {
+            console.error('[DrawingBoard] Sync failed:', err);
+        }
     };
 
-    // Handle size change
-    const handleSizeChange = (e) => {
-        const newSize = parseInt(e.target.value);
-        setBrushSize(newSize);
-        localStorage.setItem(`drawingSize_${roomId}`, newSize.toString());
+    // Manual throttle logic in a ref to avoid stale closure issues
+    const lastSendTime = useRef(0);
+    const throttledSend = (data) => {
+        const now = Date.now();
+        if (now - lastSendTime.current >= 50) { // 20fps
+            sendDrawEvent(data);
+            lastSendTime.current = now;
+        }
     };
 
     useEffect(() => {
-        // Load drawings from localStorage when component mounts
         loadCanvasFromLocalStorage();
-        if (!echo) {
-            console.warn("Echo not initialized yet, can't connect to Reverb");
-            return;
-        }
-        console.log(`%c [Echo] Joining: drawing.${roomId}`, 'color: blue');
+        if (!echo || !roomId) return;
 
-        const chatChannel = echo.join(`drawing.${roomId}`);
+        // Auto-clear logic for new round
+        const ctx = canvasRef.current?.getContext('2d');
+        ctx?.clearRect(0, 0, canvasRef.current?.width, canvasRef.current?.height);
+        localStorage.removeItem(`drawing_${roomId}`);
 
-        chatChannel
-            .here((users) => {
-                console.log('%c [Echo] Connected! Players:', 'color: green', users);
-                channelRef.current = chatChannel;
-            })
-            .listenForWhisper('draw', (event) => {
+        console.log(`[DrawingBoard] Subscribing to public channel: drawing.${roomId}`);
+        const channel = echo.channel(`drawing.${roomId}`);
+        channelRef.current = channel;
+
+        channel.listen('.DrawEvent', (event) => {
+            if (event.isClear) {
+                const ctx = canvasRef.current?.getContext('2d');
+                ctx?.clearRect(0, 0, canvasRef.current?.width, canvasRef.current?.height);
+                localStorage.removeItem(`drawing_${roomId}`);
+            } else {
                 drawOnCanvas(event.x, event.y, event.size, event.color, event.isNewPath);
-            })
-            .error((err) => {
-                console.error('[Echo] Auth/Connection Error:', err);
-            });
+                saveCanvasToLocalStorage();
+            }
+        });
 
         return () => {
-            console.log('[Echo] Leaving channel');
             echo.leave(`drawing.${roomId}`);
             channelRef.current = null;
         };
     }, [roomId, echo]);
 
     const drawOnCanvas = (x, y, size, color, isNewPath) => {
-        const ctx = canvasRef.current.getContext('2d');
-        ctx.lineWidth = size;
+        const ctx = canvasRef.current?.getContext('2d');
+        if (!ctx) return;
+
+        ctx.lineWidth   = size;
         ctx.strokeStyle = color;
+        ctx.lineCap     = 'round';
+        ctx.lineJoin    = 'round';
+
         if (isNewPath) {
             ctx.beginPath();
             ctx.moveTo(x, y);
@@ -102,140 +129,144 @@ const DrawingBoard = ({ roomId = '123' }) => {
         }
     };
 
+    const startDrawing = (e) => {
+        if (!isDrawerRef.current) return;
+
+        isDrawing.current = true;
+        const rect = canvasRef.current.getBoundingClientRect();
+        const x    = e.clientX - rect.left;
+        const y    = e.clientY - rect.top;
+
+        drawOnCanvas(x, y, brushSize, brushColor, true);
+        sendDrawEvent({ x, y, size: brushSize, color: brushColor, isNewPath: true });
+    };
+
     const handleMouseMove = (e) => {
-        if (!isDrawing.current || !channelRef.current) return;
+        if (!isDrawerRef.current || !isDrawing.current) return;
 
         const rect = canvasRef.current.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+        const x    = e.clientX - rect.left;
+        const y    = e.clientY - rect.top;
 
         drawOnCanvas(x, y, brushSize, brushColor, false);
-        channelRef.current.whisper('draw', { x, y, size: brushSize, color: brushColor, isNewPath: false });
-        
+        throttledSend({ x, y, size: brushSize, color: brushColor, isNewPath: false });
         saveCanvasToLocalStorage();
     };
 
-    const startDrawing = (e) => {
-        if (!channelRef.current) {
-            console.warn("Can't draw yet, not connected to Reverb");
-            return;
-        }
-        isDrawing.current = true;
-        const rect = canvasRef.current.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        
-        drawOnCanvas(x, y, brushSize, brushColor, true);
-        channelRef.current.whisper('draw', { x, y, size: brushSize, color: brushColor, isNewPath: true });
-        
+    const stopDrawing = () => {
+        isDrawing.current = false;
         saveCanvasToLocalStorage();
     };
 
     return (
-        <div style={{ 
-            padding: '0',
-            height: '100%',
-            width: '100%',
-            display: 'flex',
-            flexDirection: 'column',
+        <div style={{
+            height:          '100%',
+            width:           '100%',
+            display:         'flex',
+            flexDirection:   'column',
             backgroundColor: '#f5f5f5',
-            borderRadius: '8px',
-            overflow: 'hidden',
-            boxShadow: '0 4px 8px rgba(0,0,0,0.3)'
+            borderRadius:    '8px',
+            overflow:        'hidden',
+            boxShadow:       '0 4px 12px rgba(0,0,0,0.15)'
         }}>
-            {/* Controls Bar */}
-            <div style={{ 
-                padding: '12px 15px',
-                display: 'flex', 
-                gap: '15px', 
-                alignItems: 'center',
+            {/* Header / Drawing Controls */}
+            <div style={{
+                padding:         '12px 15px',
+                display:         'flex',
+                gap:             '15px',
+                alignItems:      'center',
                 backgroundColor: '#333',
-                borderBottom: '2px solid #00c8c8',
-                flexWrap: 'wrap'
+                borderBottom:    '2px solid #00c8c8',
+                flexWrap:        'wrap'
             }}>
-                {/* Color Picker */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <label style={{ fontSize: '12px', fontWeight: 'bold', color: 'white' }}>Color:</label>
-                    <input
-                        type="color"
-                        value={brushColor}
-                        onChange={handleColorChange}
-                        style={{ 
-                            cursor: 'pointer', 
-                            width: '40px', 
-                            height: '35px', 
-                            border: '2px solid #00c8c8', 
-                            borderRadius: '4px'
-                        }}
-                    />
-                </div>
+                {isDrawer && word && (
+                    <div style={{
+                        padding:         '6px 14px',
+                        borderRadius:    '6px',
+                        backgroundColor: '#1a4a1a',
+                        border:          '2px solid #4CAF50',
+                        color:           '#fff',
+                        fontWeight:      700,
+                        marginRight:     '10px'
+                    }}>
+                        WORD: {word.toUpperCase()}
+                    </div>
+                )}
 
-                {/* Brush Size Slider */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <label style={{ fontSize: '12px', fontWeight: 'bold', color: 'white' }}>Size:</label>
-                    <input
-                        type="range"
-                        min="1"
-                        max="50"
-                        value={brushSize}
-                        onChange={handleSizeChange}
-                        style={{ cursor: 'pointer', width: '120px' }}
-                    />
-                    <span style={{ fontSize: '12px', color: '#00ffff', fontWeight: 'bold', minWidth: '35px' }}>
-                        {brushSize}px
-                    </span>
-                </div>
-
-                {/* Clear Button */}
-                <button 
-                    onClick={clearDrawings}
-                    style={{
-                        marginLeft: 'auto',
-                        padding: '8px 15px',
-                        backgroundColor: '#ff4444',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        fontSize: '12px',
+                {isDrawer ? (
+                    <>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#fff', fontSize: '13px' }}>
+                            Color:
+                            <input
+                                type="color"
+                                value={brushColor}
+                                onChange={e => setBrushColor(e.target.value)}
+                                style={{ width: '40px', height: '30px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                            />
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#fff', fontSize: '13px' }}>
+                            Size:
+                            <input
+                                type="range"
+                                min="1"
+                                max="50"
+                                value={brushSize}
+                                onChange={e => setBrushSize(parseInt(e.target.value))}
+                                style={{ cursor: 'pointer' }}
+                            />
+                            <span style={{ minWidth: '30px', color: '#00c8c8' }}>{brushSize}px</span>
+                        </div>
+                        <button
+                            onClick={clearDrawings}
+                            style={{
+                                marginLeft:      'auto',
+                                padding:         '6px 12px',
+                                backgroundColor: '#e94560',
+                                color:           'white',
+                                border:          'none',
+                                borderRadius:    '4px',
+                                fontWeight:      'bold',
+                                cursor:          'pointer'
+                            }}
+                        >
+                            🗑️ CLEAR
+                        </button>
+                    </>
+                ) : (
+                    <div style={{
+                        padding:    '6px 12px',
+                        color:      '#888',
+                        fontSize:   '13px',
                         fontWeight: 'bold',
-                        transition: 'all 0.3s ease',
-                        boxShadow: '0 2px 4px rgba(255,68,68,0.4)'
-                    }}
-                    onMouseOver={(e) => e.target.style.backgroundColor = '#ff2222'}
-                    onMouseOut={(e) => e.target.style.backgroundColor = '#ff4444'}
-                >
-                    🗑️ Clear
-                </button>
+                        fontStyle:  'italic'
+                    }}>
+                        Wait – you are guessing!
+                    </div>
+                )}
             </div>
 
-            {/* Canvas Container */}
             <div style={{
-                flex: 1,
-                overflow: 'auto',
+                flex:            1,
                 backgroundColor: 'white',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '10px'
+                display:         'flex',
+                alignItems:      'center',
+                justifyContent:  'center',
+                cursor:          isDrawer ? 'crosshair' : 'default',
+                position:        'relative'
             }}>
                 <canvas
                     ref={canvasRef}
                     onMouseDown={startDrawing}
                     onMouseMove={handleMouseMove}
-                    onMouseUp={() => (isDrawing.current = false)}
-                    onMouseLeave={() => (isDrawing.current = false)}
+                    onMouseUp={stopDrawing}
+                    onMouseLeave={stopDrawing}
                     width={800}
                     height={600}
-                    className="game-canvas"
-                    style={{ 
-                        border: '3px solid #333', 
-                        borderRadius: '4px', 
-                        cursor: 'crosshair',
+                    style={{
+                        maxWidth:        '100%',
+                        maxHeight:       '100%',
                         backgroundColor: 'white',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-                        maxWidth: '100%',
-                        maxHeight: '100%'
+                        boxShadow:       '0 0 20px rgba(0,0,0,0.1)'
                     }}
                 />
             </div>

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "fa351435bd067414f8ae925783c1509d",
+    "content-hash": "7712a406718b48b6599abd3134f9b25c",
     "packages": [
         {
             "name": "brick/math",
@@ -4444,6 +4444,32 @@
                 }
             ],
             "time": "2024-06-11T12:45:25+00:00"
+        },
+        {
+            "name": "s1lver/grpc-php-plugin-binary",
+            "version": "1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/s1lver/grpc-php-plugin-binary.git",
+                "reference": "86aa1db2130b5c87cf591aea61052df0d27f3a9e"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/s1lver/grpc-php-plugin-binary/zipball/86aa1db2130b5c87cf591aea61052df0d27f3a9e",
+                "reference": "86aa1db2130b5c87cf591aea61052df0d27f3a9e",
+                "shasum": ""
+            },
+            "type": "library",
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "BSD-3-Clause"
+            ],
+            "description": "grpc_php_plugin binary for protoc utils",
+            "support": {
+                "issues": "https://github.com/s1lver/grpc-php-plugin-binary/issues",
+                "source": "https://github.com/s1lver/grpc-php-plugin-binary/tree/1.0.0"
+            },
+            "time": "2023-05-23T21:39:51+00:00"
         },
         {
             "name": "symfony/clock",
@@ -9838,5 +9864,5 @@
         "php": "^8.2"
     },
     "platform-dev": {},
-    "plugin-api-version": "2.6.0"
+    "plugin-api-version": "2.9.0"
 }

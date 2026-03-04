@@ -8,6 +8,4 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-// Game room endpoints
-Route::post('api/game/{gameId}/join',[DrawingLobbyController::class, 'joinLobby']);
-Route::post('api/game/{gameId}/leave', [DrawingLobbyController::class, 'leaveLobby']);
+// Game room endpoints (moved to api.php to be CSRF-exempt)

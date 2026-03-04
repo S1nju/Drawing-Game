@@ -1,12 +1,27 @@
-syntax = "proto3";
-package myservice;
-service MyService {
-  rpc GetUserInfo (UserInfoRequest) returns (UserInfoResponse);
-}
-message UserInfoRequest {
-  string user_id = 1;
-}
-message UserInfoResponse {
-  string token = 1;
+syntax ="proto3";
 
+
+
+service UsersService {
+  rpc CheckUser (CheckUserRequest) returns (CheckUserResponse);
+  rpc CheckById (CheckByIdRequest) returns (CheckByIdResponse);
+
+}
+
+
+message CheckUserRequest {
+  string sessionId = 1;
+  
+}
+
+message CheckUserResponse {
+  float check = 1;
+}
+
+message CheckByIdRequest {
+  int32 id = 1;
+}
+
+message CheckByIdResponse {
+  float check = 1;
 }

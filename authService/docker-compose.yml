@@ -1,0 +1,43 @@
+version: "3.9"
+
+services:
+  nestjs-app:
+    build: .
+    container_name: nestjs-app
+    ports:
+      - "3001:3001"     
+      - "50051:50051" 
+    environment:
+      - NODE_ENV=production
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_USER=harir
+      - DATABASE_PASSWORD=harir
+      - DATABASE_NAME=auth
+      - SECRET_KEY_SESSION=harir2004
+    depends_on:
+      - postgres
+    restart: unless-stopped
+    networks:
+      - drawingGameNet
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: nestjs-postgres
+    ports:
+      - "5435:5432"
+    environment:
+      POSTGRES_USER: harir
+      POSTGRES_PASSWORD: harir
+      POSTGRES_DB: auth
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - drawingGameNet
+
+volumes:
+  pgdata:
+networks:
+  drawingGameNet:
+    driver: bridge

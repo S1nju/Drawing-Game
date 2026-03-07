@@ -71,7 +71,7 @@ const GameRoom = ({ gameData, onBackToLobby }) => {
       });
 
       // Join API
-      fetch('http://localhost:8000/api/game/' + gameId + '/join', {
+      fetch('http://127.0.0.1:8000/api/game/' + gameId + '/join', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id: userId, user_name: playerName })
@@ -109,7 +109,7 @@ const GameRoom = ({ gameData, onBackToLobby }) => {
   }, [timeLeft, gameStarted, isGameOver]);
 
   const handleNextRound = () => {
-    fetch(`http://localhost:8000/api/game/${gameData?.gameId}/next-round`, {
+    fetch(`http://127.0.0.1:8000/api/game/${gameData?.gameId}/next-round`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
     }).catch(err => console.error(err));
@@ -117,7 +117,7 @@ const GameRoom = ({ gameData, onBackToLobby }) => {
 
   const handleStartGame = () => {
     const userId = existingUser?.userId || gameData?.userId;
-    fetch(`http://localhost:8000/api/game/${gameData?.gameId}/start`, {
+    fetch(`http://127.0.0.1:8000/api/game/${gameData?.gameId}/start`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ user_id: userId }),

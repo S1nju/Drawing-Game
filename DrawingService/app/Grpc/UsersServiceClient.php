@@ -20,11 +20,11 @@ class UsersServiceClient extends \Grpc\BaseStub {
      * @param \App\Grpc\CheckUserRequest $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
-     * @return \Grpc\UnaryCall
+     * @return \Grpc\UnaryCall<\App\Grpc\CheckUserResponse>
      */
     public function CheckUser(\App\Grpc\CheckUserRequest $argument,
       $metadata = [], $options = []) {
-        return $this->_simpleRequest('/UsersService/CheckUser',
+        return $this->_simpleRequest('/users.UsersService/CheckUser',
         $argument,
         ['\App\Grpc\CheckUserResponse', 'decode'],
         $metadata, $options);
@@ -34,11 +34,11 @@ class UsersServiceClient extends \Grpc\BaseStub {
      * @param \App\Grpc\CheckByIdRequest $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
-     * @return \Grpc\UnaryCall
+     * @return \Grpc\UnaryCall<\App\Grpc\CheckByIdResponse>
      */
     public function CheckById(\App\Grpc\CheckByIdRequest $argument,
       $metadata = [], $options = []) {
-        return $this->_simpleRequest('/UsersService/CheckById',
+        return $this->_simpleRequest('/users.UsersService/CheckById',
         $argument,
         ['\App\Grpc\CheckByIdResponse', 'decode'],
         $metadata, $options);

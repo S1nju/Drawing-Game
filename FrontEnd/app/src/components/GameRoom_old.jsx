@@ -75,7 +75,7 @@ const GameRoom = ({ gameData, onBackToLobby }) => {
             const notifyJoin = async () => {
               try {
                 console.log('Notifying backend - join');
-                const response = await fetch('http://localhost:8000/api/game/' + gameId + '/join', {
+                const response = await fetch('http://127.0.0.1:8000/api/game/' + gameId + '/join', {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
@@ -107,7 +107,7 @@ const GameRoom = ({ gameData, onBackToLobby }) => {
       const notifyLeave = async () => {
         try {
           console.log('Notifying backend - leave');
-          const response = await fetch('http://localhost:8000/api/game/' + gameId + '/leave', {
+          const response = await fetch('http://127.0.0.1:8000/api/game/' + gameId + '/leave', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

@@ -10,7 +10,7 @@ use Google\Protobuf\Internal\GPBUtil;
 use Google\Protobuf\RepeatedField;
 
 /**
- * Generated from protobuf message <code>CheckUserResponse</code>
+ * Generated from protobuf message <code>users.CheckUserResponse</code>
  */
 class CheckUserResponse extends \Google\Protobuf\Internal\Message
 {

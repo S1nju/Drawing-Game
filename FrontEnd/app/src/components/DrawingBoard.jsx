@@ -57,7 +57,7 @@ const DrawingBoard = ({ roomId = '123', word = '', isDrawer = false, userId }) =
         try {
             const socketId = echo?.socketId();
             
-            await fetch(`http://localhost:8000/api/game/${roomIdRef.current}/draw`, {
+            await fetch(`http://127.0.0.1:8000/api/game/${roomIdRef.current}/draw`, {
 
                 method:  'POST',
                 headers: { 

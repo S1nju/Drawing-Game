@@ -4,11 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Events\UserJoined;
 use App\Events\UserLeft;
+use App\Grpc\CheckByIdRequest;
+use App\Grpc\UsersServiceClient;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use App\Grpc\GPBMetadata\UserService;
 use App\Grpc\CheckUserRequest;
-
+use \Grpc\ChannelCredentials;
 class DrawingLobbyController extends Controller
 {
     /** Cache key for the player list of a game room. */
@@ -20,23 +21,23 @@ class DrawingLobbyController extends Controller
     public function joinLobby(Request $request, $gameId)
     {
         $user = [
-            'id'   => $request->input('user_id'),
+            'id' => $request->input('user_id'),
             'name' => $request->input('user_name'),
         ];
 
-        $client = new UserService('nestjs-app:50051', [
-            'credentials' => Grpc\ChannelCredentials::createInsecure(),
+        $client = new UsersServiceClient('localhost:50051', [
+            'credentials' => ChannelCredentials::createInsecure(),
         ]);
-        $client->CheckUser(new CheckUserRequest(['session_id' => $request->input('session_id')]));
 
-        $response = $client->CheckById(new CheckUserRequest(['id' => $request->input('user_id')]));
-        if($response->check == 0){
-            return response()->json(['error' => 'User not found'], 404);
+        $userInfoRequest = new CheckByIdRequest();
+        $userInfoRequest->setId(intval($request->input('user_id')));
+        list($response, $status) = $client->CheckById($userInfoRequest)->wait();
+        if ($status->code !== \Grpc\STATUS_OK) {
+            return response()->json(['error' => 'Failed to fetch user info','err' => $status], 500);
         }
         \Log::info('joinLobby called', ['gameId' => $gameId, 'user' => $user]);
 
-        // Add the joining player to the cached player list (ttl: 2 hours)
-        $key     = $this->roomKey($gameId);
+        $key = $this->roomKey($gameId);
         $players = Cache::get($key, []);
 
         // Avoid duplicates (e.g. page refresh)
@@ -57,14 +58,14 @@ class DrawingLobbyController extends Controller
     public function leaveLobby(Request $request, $gameId)
     {
         $user = [
-            'id'   => $request->input('user_id'),
+            'id' => $request->input('user_id'),
             'name' => $request->input('user_name'),
         ];
 
         \Log::info('leaveLobby called', ['gameId' => $gameId, 'user' => $user]);
 
         // Remove the leaving player from the cached list
-        $key     = $this->roomKey($gameId);
+        $key = $this->roomKey($gameId);
         $players = Cache::get($key, []);
         $players = array_values(array_filter($players, fn($p) => $p['id'] !== $user['id']));
         Cache::put($key, $players, now()->addHours(2));

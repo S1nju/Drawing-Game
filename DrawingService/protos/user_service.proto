@@ -1,5 +1,7 @@
 syntax ="proto3";
 
+package users;
+
 option php_namespace = "App\\Grpc";
 option php_metadata_namespace = "App\\Grpc\\GPBMetadata";
 

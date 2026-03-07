@@ -41,7 +41,7 @@ const Chat = ({ gameId, currentUser, drawerId }) => {
 
         setSending(true);
         try {
-            await fetch(`http://localhost:8000/api/game/${gameId}/chat`, {
+            await fetch(`http://127.0.0.1:8000/api/game/${gameId}/chat`, {
                 method:  'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body:    JSON.stringify({

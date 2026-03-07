@@ -1,29 +1,24 @@
 const AppDataSource = require("../config/data-source");
-const lobbyClient = require("./lobby"); 
 
+async function CheckGame(call, callback) {
+  try {
+    const gameRepo = AppDataSource.getRepository("Game");
 
-async function Checkgame(call,callback) {
-  try{
+    const { gameId } = call.request;
 
-  const gameRepo = AppDataSource.getRepository("Game");
+    const game = await gameRepo.findOne({
+      where: { id: gameId },
+    });
 
-  const { gameId } = call.request;
+    if (!game) {
+      return callback(null, { exists: false });
+    }
 
-  const game = await gameRepo.findOne({
-    where: { id: gameId },
-  });
-
-  if (!game) {
-    return callback(null,{exists: false});
+    return callback(null, { exists: true });
+  } catch (error) {
+    callback(new Error("Error checking game existence"));
   }
-
-  return callback(null, {  exists: true});
-} catch (error) {
-
-  callback(new Error("Error checking game existence"));
 }
-}
-
 
 async function GetGameInfo(call, callback) {
   try {
@@ -39,22 +34,6 @@ async function GetGameInfo(call, callback) {
     if (!game) {
       return callback(new Error("Game not found"));
     }
-
-    // 🔥 Envoyer les infos au Lobby Service
-    lobbyClient.CreateLobby(
-      {
-        gameId: game.id,
-        status: game.status,
-        maxPlayers: game.maxPlayers,
-        totalRounds: game.totalRounds,
-        turnTime: game.turnTime,
-      },
-      (err, response) => {
-        if (err) {
-          console.error("Lobby error:", err);
-        }
-      }
-    );
 
     
     callback(null, {
@@ -72,4 +51,5 @@ async function GetGameInfo(call, callback) {
 
 module.exports = {
   GetGameInfo,
+  CheckGame,
 };

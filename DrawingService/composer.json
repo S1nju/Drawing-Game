@@ -28,6 +28,8 @@
     "autoload": {
         "psr-4": {
             "App\\": "app/",
+            "Game\\": "app/Grpc/Game/",
+            "GPBMetadata\\": "app/Grpc/GPBMetadata/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
         }

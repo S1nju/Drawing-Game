@@ -2,8 +2,10 @@ import React, { useEffect, useState, useRef } from 'react';
 import DrawingBoard from './DrawingBoard';
 import Chat from './Chat';
 import '../styles/GameRoom.css';
-import { getUserFromCookie, saveUserToCookie } from '../utils/cookieUtils';
+import { getUserFromCookie } from '../utils/cookieUtils';
 import useEcho from '../hooks/useEcho';
+
+const DRAWING_API_BASE = 'http://127.0.0.1:8000/api';
 
 const GameRoom = ({ gameData, onBackToLobby }) => {
   const [connectedUsers, setConnectedUsers]   = useState([]);
@@ -58,7 +60,7 @@ const GameRoom = ({ gameData, onBackToLobby }) => {
         setCurrentWord(event.word);
         setDrawerId(event.drawer_id);
         setGameStarted(true);
-        setTimeLeft(60);
+        setTimeLeft(Number(gameData?.turnTime) || 60);
         setIsGameOver(false);
       });
 
@@ -71,18 +73,27 @@ const GameRoom = ({ gameData, onBackToLobby }) => {
       });
 
       // Join API
-      fetch('http://127.0.0.1:8000/api/game/' + gameId + '/join', {
+      fetch(`${DRAWING_API_BASE}/game/${gameId}/join`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id: userId, user_name: playerName })
       })
-      .then(res => res.json())
+      .then(async (res) => {
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data?.error || 'Failed to join lobby');
+        }
+        return data;
+      })
       .then(data => {
         if (Array.isArray(data.players)) {
           setConnectedUsers(data.players);
         }
       })
-      .catch(err => console.error('Join API failed:', err));
+      .catch(err => {
+        alert(err.message || 'Unable to join this room.');
+        onBackToLobby();
+      });
 
     } catch (error) {
       console.error('Echo subscription error:', error);
@@ -92,7 +103,7 @@ const GameRoom = ({ gameData, onBackToLobby }) => {
       if (gameId) echo.leave('game.' + gameId);
       channelRef.current = null;
     };
-  }, [gameData, existingUser, echo]);
+  }, [gameData, existingUser, echo, onBackToLobby]);
 
   // Timer logic
   useEffect(() => {
@@ -109,7 +120,7 @@ const GameRoom = ({ gameData, onBackToLobby }) => {
   }, [timeLeft, gameStarted, isGameOver]);
 
   const handleNextRound = () => {
-    fetch(`http://127.0.0.1:8000/api/game/${gameData?.gameId}/next-round`, {
+    fetch(`${DRAWING_API_BASE}/game/${gameData?.gameId}/next-round`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
     }).catch(err => console.error(err));
@@ -117,11 +128,12 @@ const GameRoom = ({ gameData, onBackToLobby }) => {
 
   const handleStartGame = () => {
     const userId = existingUser?.userId || gameData?.userId;
-    fetch(`http://127.0.0.1:8000/api/game/${gameData?.gameId}/start`, {
+    fetch(`${DRAWING_API_BASE}/game/${gameData?.gameId}/start`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ user_id: userId }),
     })
+    .then(res => res.json())
     .then(data => {
       setCurrentWord(data.word);
       setDrawerId(data.drawer_id);
@@ -146,7 +158,7 @@ const GameRoom = ({ gameData, onBackToLobby }) => {
         <div className="game-setup">
           <div className="players-panel">
             <div className="panel-header">
-              <h3>JOUEURS {connectedUsers.length}/14</h3>
+              <h3>JOUEURS {connectedUsers.length}/{gameData?.maxPlayers ?? 14}</h3>
               <span style={{color: connectionStatus === 'connected' ? '#4caf50' : '#ff9800'}}>
                 {connectionStatus === 'connected' ? '🟢 Connecté' : '🟡 Connexion...'}
               </span>

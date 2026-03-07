@@ -3,9 +3,9 @@ services:
     build: .
     ports:
       - "3000:3000"
-      - "50051:50051"
+      - "50052:50052"
     depends_on:
-      - postgres
+      - DB_GAME
     restart: always
     environment:
       DB_HOST: DB_GAME
@@ -21,4 +21,4 @@ services:
       POSTGRES_PASSWORD: 123456
       POSTGRES_DB: game_db
     ports:
-      - "5432:5432"
+      - "5436:5432"

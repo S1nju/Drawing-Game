@@ -1,9 +1,8 @@
 const grpc = require("@grpc/grpc-js");
 const protoLoader = require("@grpc/proto-loader");
 const {
-  StartGame,
-  SubmitAnswer,
-  GetGameState,
+  GetGameInfo,
+  CheckGame,
 } = require("./grpc/game.handlers");
 
 const packageDefinition = protoLoader.loadSync("proto/game.proto");
@@ -13,9 +12,8 @@ function startGrpcServer(port) {
   const server = new grpc.Server();
 
   server.addService(gameProto.GameService.service, {
-    StartGame,
-    SubmitAnswer,
-    GetGameState,
+    CheckGame,
+    GetGameInfo,
   });
 
   server.bindAsync(

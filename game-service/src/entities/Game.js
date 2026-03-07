@@ -11,6 +11,7 @@ module.exports = new EntitySchema({
     },
     hostId: {
       type: "uuid",
+      nullable: true,
     },
     status: {
       type: "varchar",

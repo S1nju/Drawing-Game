@@ -119,6 +119,68 @@
   letter-spacing: 2px;
 }
 
+/* Create Game Modal */
+.setup-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 16px;
+}
+
+.setup-modal-card {
+  width: min(520px, 100%);
+  background: var(--card-bg);
+  border-radius: 20px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  padding: 24px;
+}
+
+.setup-modal-title {
+  margin: 0;
+  color: var(--accent-yellow);
+  font-size: 1.8rem;
+}
+
+.setup-modal-subtitle {
+  margin: 8px 0 20px;
+  color: var(--text-muted);
+}
+
+.setup-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.setup-field label {
+  color: var(--secondary-color);
+  font-weight: 700;
+}
+
+.setup-modal-actions {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 640px) {
+  .setup-modal-card {
+    padding: 16px;
+    border-radius: 14px;
+  }
+
+  .setup-modal-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Drawing Board Styles */
 .drawing-container {
   display: flex;

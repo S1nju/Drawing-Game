@@ -17,6 +17,7 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 
 // Game room endpoints
+Route::get('/game/{gameId}/lobby-info', [DrawingLobbyController::class, 'lobbyInfo']);
 Route::post('/game/{gameId}/join',  [DrawingLobbyController::class, 'joinLobby']);
 Route::post('/game/{gameId}/leave', [DrawingLobbyController::class, 'leaveLobby']);
 

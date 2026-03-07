@@ -4,7 +4,7 @@ const AppDataSource = require("./config/data-source");
 const startGrpcServer = require("./grpc-server");
 
 const PORT = process.env.PORT || 3000;
-const GRPC_PORT = process.env.GRPC_PORT || 50051;
+const GRPC_PORT = process.env.GRPC_PORT || 50052;
 
 function connectWithRetry() {
   AppDataSource.initialize()

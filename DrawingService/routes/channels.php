@@ -1,15 +1,25 @@
 <?php
 
 use Illuminate\Support\Facades\Broadcast;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 
-Broadcast::channel('drawing.{roomId}', function ($user, $roomId) {
-    // This will show up in your terminal or storage/logs/laravel.log
-    Log::info("Channel auth hit for room: " . $roomId);
+/*
+|--------------------------------------------------------------------------
+| Broadcast Channels
+|--------------------------------------------------------------------------
+|
+| Here you may register all of the event broadcasting channels that your
+| application supports. The given channel authorization callbacks are
+| used to check if an authenticated user can listen to the channel.
+|
+*/
 
-    return [
-        'id' => (string) Str::random(10),
-        'name' => 'Guest'
-    ];
-});
+// Public game lobby channel — allow everyone
+Broadcast::channel('game.{gameId}', fn() => true);
+
+// Public drawing channel — anyone can subscribe
+Broadcast::channel('drawing.{roomId}', fn() => true);
+
+
+// Public chat/guess channel
+Broadcast::channel('chat.{gameId}', fn() => true);
+

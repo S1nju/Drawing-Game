@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package game;
+
+service GameService {
+  rpc GetGameInfo (GetGameRequest) returns (GameInfoResponse);
+}
+
+message GetGameRequest {
+  string gameId = 1;
+}
+message GameInfoResponse {
+  string gameId = 1;
+  string status = 2;
+  int32 maxPlayers = 3;
+  int32 totalRounds = 4;
+  int32 turnTime = 5;
+}
+message CheckGameRequest {
+  string gameId = 1;
+}
+
+message CheckGameResponse {
+  bool exists = 1;
+}

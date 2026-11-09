@@ -1,0 +1,22 @@
+PROJET : DRAWING-GAME
+PRÉSENTATION DES CONTRIBUTIONS DES MEMBRES
+
+1. HARIR MAHMOUD
+
+Harir worked on the frontend development of the Drawing-Game project using React. His contribution included developing the user interface, organizing the application components, implementing the different screens, and handling user interactions. He also worked on connecting the frontend to the backend services to allow players to access lobbies and participate in games.
+
+2. BOUHAIK ANES MOHAMMED EL AMINE
+
+Bouhaik worked on the Drawing Service developed with Laravel. His contribution included implementing lobby management, handling drawing-related operations, managing real-time events, and establishing communication between the drawing service and other backend components using gRPC and event-based mechanisms.
+
+3. AYOUB ELHAMER
+
+Ayoub worked on the User and Authentication Service developed with NestJS. His contribution included implementing user management, authentication mechanisms, handling user-related requests, and ensuring that player information could be managed and accessed by the application.
+
+4. ACHRAF
+
+Achraf worked on the Game Service developed with Node.js. His contribution included implementing the main game logic, managing game sessions and rounds, handling player actions and guesses, and managing communication through HTTP endpoints and data storage.
+
+CONCLUSION
+
+The four members contributed to the development of Drawing-Game by working on different parts of the application. Their work brought together the frontend, drawing and lobby management, user authentication, and game logic to create a browser-based multiplayer drawing-and-guessing game.

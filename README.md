@@ -1,4 +1,7 @@
 # Drawing-Game
+Harir mahmoud
+Hamadouche Achraf
+Elhamer Ayoub
 
 Drawing-Game is a browser-based multiplayer drawing-and-guessing game built using a distributed architecture. The project consists of a React frontend, a Laravel backend responsible for drawing and lobby management, a NestJS service for user management and authentication, and a Node.js game service responsible for game logic and data storage.
 
